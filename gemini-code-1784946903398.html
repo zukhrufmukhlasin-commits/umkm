@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Website UMKM Kemudo</title>
+    <style>
+        /* MENGHILANGKAN JARAK BAWAHAN BROWSER */
+        * {
+            box-sizing: border-box;
+        }
+
+        html { scroll-behavior: smooth; }
+        
+        body {
+            margin: 0; 
+            padding: 0; 
+            min-height: 100vh; 
+            background-color: #EFEAE2; 
+            background-image: url('2.jpg'); 
+            background-size: cover; 
+            background-repeat: repeat; 
+            background-position: center center; 
+            background-attachment: fixed; 
+            font-family: Arial, sans-serif;
+        }
+
+        /* WADAH KONTROL ATAS (MENEMPEL RAPAT TANPA JARAK BAWAH) */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 30px;
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin: 0;
+            border-bottom: 2px solid #ccc;
+        }
+
+        /* MENU KANAN ATAS */
+        .menu-atas { 
+            display: flex; 
+            gap: 10px; 
+        }
+        .tombol-menu { 
+            text-decoration: none; 
+            color: black; 
+            font-weight: bold; 
+            font-size: 15px; 
+            padding: 6px 14px; 
+            cursor: pointer; 
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .aktif { 
+            background-color: #00AEEF !important; 
+            color: black; 
+            border-color: #00AEEF;
+        }
+
+        /* TOMBOL ADMIN KIRI ATAS */
+        .tombol-admin { 
+            background-color: #333; 
+            color: white; 
+            padding: 6px 14px; 
+            font-weight: bold; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            border: none; 
+        }
+
+        /* PENGATURAN HALAMAN KONTEN */
+        .halaman { 
+            display: none; 
+            text-align: center; 
+            padding: 0; 
+            margin: 0;
+            padding-bottom: 50px; 
+        }
+        .halaman-tampil { display: block; }
+        
+        /* GAMBAR BANNER TEPAT DI BAWAH GARIS MENU */
+        .gambar-utama { 
+            display: block; 
+            width: 100%; 
+            height: auto; 
+            margin: 0; 
+            padding: 0;
+            border: none;
+        }
+
+        /* KOTAK LOGIN & ADMIN */
+        .kotak-panel { background-color: rgba(255, 255, 255, 0.95); width: 90%; max-width: 400px; margin: 50px auto; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .kotak-panel input[type="text"], .kotak-panel input[type="password"], .kotak-panel input[type="number"], .kotak-panel select, .kotak-panel textarea { 
+            width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-family: Arial, sans-serif; font-size: 14px;
+        }
+        .input-file-desain {
+            width: 90%; padding: 10px; margin: 10px 0; border: 2px dashed #00AEEF; border-radius: 5px; background-color: #f8f9fa; cursor: pointer;
+        }
+        .tombol-masuk { background-color: #00AEEF; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .tombol-tambah { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 95%;}
+
+        /* NAVIGASI & WADAH KATEGORI */
+        .navigasi-kategori { background-color: white; padding: 15px 0; border-bottom: 2px solid #ccc; margin-top: 0; margin-bottom: 30px; }
+        .kategori-link { text-decoration: none; color: #333; font-weight: bold; margin: 0 10px; font-size: 16px; }
+        .kategori-link:hover { color: #00AEEF; }
+        .bagian-katalog { background-color: rgba(255, 255, 255, 0.92); width: 90%; margin: 30px auto; padding: 20px; border-radius: 10px; text-align: left; }
+        .bagian-katalog h2 { border-bottom: 2px solid #7E4F28; padding-bottom: 10px; color: #7E4F28; }
+        .daftar-produk { display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px; justify-content: center; }
+
+        /* DESAIN KARTU PRODUK */
+        .kartu-produk { background-color: white; padding: 20px; width: 100%; max-width: 300px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .foto-produk { width: 100%; max-width: 250px; height: 250px; border-radius: 50%; object-fit: cover; margin: 0 auto 20px auto; }
+        .nama-produk { background-color: #7E4F28; color: white; font-size: 20px; font-weight: bold; padding: 5px 15px; margin: 0 0 10px 0; text-align: left; }
+        .deskripsi-produk { color: #7E4F28; font-size: 18px; font-weight: bold; text-align: left; margin: 0; padding-left: 25px; }
+        .deskripsi-produk li { margin-bottom: 5px; }
+        .harga-produk { color: #7E4F28; font-size: 28px; font-weight: bold; text-align: right; margin: 15px 0 15px 0; }
+
+        /* TOMBOL WHATSAPP ESTETIK */
+        .tombol-wa {
+            background-color: #7E4F28;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 15px;
+            display: block;
+            margin-top: auto;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+        .tombol-wa:hover {
+            background-color: #5d381c;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BARIS KONTROL ATAS -->
+    <div class="header-container">
+        <div>
+            <button class="tombol-admin" onclick="bukaHalamanSaja('halaman-login')">🔒 Login Admin</button>
+        </div>
+        <div class="menu-atas">
+            <a class="tombol-menu aktif" onclick="pindahHalaman('home', this)">HOME</a>
+            <a class="tombol-menu" onclick="pindahHalaman('kuliner', this)">KULINER</a>
+            <a class="tombol-menu" onclick="pindahHalaman('tekstil', this)">TEKSTIL</a>
+            <a class="tombol-menu" onclick="pindahHalaman('mebel', this)">MEBEL</a>
+        </div>
+    </div>
+
+    <!-- HALAMAN HOME -->
+    <div id="home" class="halaman halaman-tampil">
+        <img src="foto-halaman-home.png" alt="Selamat Datang UMKM Kemudo" class="gambar-utama">
+    </div>
+
+    <!-- HALAMAN KULINER -->
+    <div id="kuliner" class="halaman">
+        <img src="kuliner.png" alt="Katalog Kuliner" class="gambar-utama">
+
+        <div class="navigasi-kategori">
+            <a href="#katering" class="kategori-link">Catering</a>
+            <a href="#snack" class="kategori-link">Snack</a>
+            <a href="#jamu" class="kategori-link">Jamu</a>
+            <a href="#kue" class="kategori-link">Kue Tradisional</a>
+        </div>
+
+        <div id="katering" class="bagian-katalog"><h2>Katalog Catering</h2><div class="daftar-produk" id="wadah-catering"></div></div>
+        <div id="snack" class="bagian-katalog"><h2>Katalog Snack</h2><div class="daftar-produk" id="wadah-snack"></div></div>
+        <div id="jamu" class="bagian-katalog"><h2>Katalog Jamu</h2><div class="daftar-produk" id="wadah-jamu"></div></div>
+        <div id="kue" class="bagian-katalog"><h2>Katalog Kue Tradisional</h2><div class="daftar-produk" id="wadah-kue"></div></div>
+    </div>
+
+    <!-- HALAMAN TEKSTIL -->
+    <div id="tekstil" class="halaman">
+        <img src="tekstil.png" alt="Katalog Tekstil" class="gambar-utama">
+        <div class="bagian-katalog">
+            <h2>Katalog Produk Tekstil & Batik</h2>
+            <div class="daftar-produk" id="wadah-tekstil"></div>
+        </div>
+    </div>
+
+    <!-- HALAMAN MEBEL -->
+    <div id="mebel" class="halaman">
+        <img src="mebel.png" alt="Katalog Mebel" class="gambar-utama">
+        <div class="bagian-katalog">
+            <h2>Katalog Produk Mebel & Kerajinan</h2>
+            <div class="daftar-produk" id="wadah-mebel"></div>
+        </div>
+    </div>
+         
+    <!-- HALAMAN LOGIN -->
+    <div id="halaman-login" class="halaman">
+        <div class="kotak-panel">
+            <h2>Masuk sebagai Admin</h2>
+            <input type="text" id="username" placeholder="Masukkan Username">
+            <input type="password" id="password" placeholder="Masukkan Sandi">
+            <button class="tombol-masuk" onclick="cekLogin()">Masuk</button>
+        </div>
+    </div>
+
+    <!-- HALAMAN ADMIN -->
+    <div id="halaman-admin" class="halaman">
+        <div class="kotak-panel" style="width: 100%; max-width: 500px;">
+            <h2>Panel Admin UMKM</h2>
+            <p id="teks-sapaan" style="color: #00AEEF; font-weight: bold;"></p>
+            <hr>
+            
+            <h3 style="text-align: left;">➕ Tambah Produk Baru</h3>
+            
+            <select id="input-kategori">
+                <option value="wadah-catering">Kuliner: Catering</option>
+                <option value="wadah-snack">Kuliner: Snack</option>
+                <option value="wadah-jamu">Kuliner: Jamu</option>
+                <option value="wadah-kue">Kuliner: Kue Tradisional</option>
+                <option value="wadah-tekstil">Tekstil & Batik</option>
+                <option value="wadah-mebel">Mebel & Kerajinan</option>
+            </select>
+
+            <input type="file" id="input-foto" class="input-file-desain" accept="image/*">
+            <small style="display: block; text-align: left; margin-bottom: 10px; color: gray;">*Pilih foto dari laptop/HP</small>
+            
+            <input type="text" id="input-nama" placeholder="Nama Produk">
+            
+            <textarea id="input-deskripsi" rows="3" placeholder="Deskripsi (Pisahkan dengan koma)"></textarea>
+            
+            <input type="number" id="input-harga" placeholder="Harga (Cukup angka saja, misal: 20000)">
+            
+            <button class="tombol-tambah" onclick="tambahProduk()">Simpan Produk ke Website</button>
+            <br><br><hr><br>
+            <button class="tombol-masuk" style="background-color: red;" onclick="bukaHalamanSaja('home')">Logout (Keluar)</button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        function pindahHalaman(namaHalaman, tombolYangDiklik) {
+            let semuaHalaman = document.getElementsByClassName("halaman");
+            for (let i = 0; i < semuaHalaman.length; i++) { semuaHalaman[i].style.display = "none"; }
+            let semuaTombol = document.getElementsByClassName("tombol-menu");
+            for (let i = 0; i < semuaTombol.length; i++) { semuaTombol[i].classList.remove("aktif"); }
+            document.getElementById(namaHalaman).style.display = "block";
+            tombolYangDiklik.classList.add("aktif");
+            window.scrollTo(0, 0); 
+        }
+
+        function bukaHalamanSaja(namaHalaman) {
+            let semuaHalaman = document.getElementsByClassName("halaman");
+            for (let i = 0; i < semuaHalaman.length; i++) { semuaHalaman[i].style.display = "none"; }
+            let semuaTombol = document.getElementsByClassName("tombol-menu");
+            for (let i = 0; i < semuaTombol.length; i++) { semuaTombol[i].classList.remove("aktif"); }
+            document.getElementById(namaHalaman).style.display = "block";
+            window.scrollTo(0, 0); 
+        }
+
+        function cekLogin() {
+            let user = document.getElementById("username").value.toLowerCase();
+            let pass = document.getElementById("password").value;
+            if ((user === "mukhlas" || user === "zulfa" || user === "giffari") && pass === "kkn120") {
+                document.getElementById("teks-sapaan").innerText = "Selamat datang, Kak " + user.toUpperCase() + "!";
+                bukaHalamanSaja('halaman-admin');
+                document.getElementById("username").value = ""; 
+                document.getElementById("password").value = ""; 
+            } else {
+                alert("Maaf, Username atau Sandi salah!");
+            }
+        }
+
+        function tambahProduk() {
+            let kategori = document.getElementById("input-kategori").value;
+            let fileInput = document.getElementById("input-foto");
+            let nama = document.getElementById("input-nama").value;
+            let deskripsi = document.getElementById("input-deskripsi").value;
+            let hargaInput = document.getElementById("input-harga").value;
+
+            if (fileInput.files.length === 0) {
+                alert("Gagal! Pilih foto produknya dulu ya.");
+                return;
+            }
+
+            if (nama === "" || deskripsi === "" || hargaInput === "") {
+                alert("Gagal! Nama, deskripsi, dan harga harus diisi.");
+                return;
+            }
+
+            let hargaAngka = Number(hargaInput);
+            let hargaFormatRupiah = "Rp " + hargaAngka.toLocaleString("id-ID");
+
+            let nomorWa = "6288224100733";
+            let pesanWa = encodeURIComponent("Halo, saya ingin memesan " + nama + " (" + hargaFormatRupiah + "). Apakah produk ini masih tersedia?");
+            let linkWa = "https://wa.me/" + nomorWa + "?text=" + pesanWa;
+
+            let fileFoto = fileInput.files[0];
+            let reader = new FileReader();
+
+            reader.onload = function(event) {
+                let fotoHasilUpload = event.target.result;
+
+                let potonganDeskripsi = deskripsi.split(',');
+                let htmlDeskripsi = "";
+                for (let i = 0; i < potonganDeskripsi.length; i++) {
+                    htmlDeskripsi += "<li>" + potonganDeskripsi[i].trim() + "</li>";
+                }
+
+                let produkBaru = `
+                    <div class="kartu-produk">
+                        <img src="${fotoHasilUpload}" alt="${nama}" class="foto-produk">
+                        <div class="nama-produk">${nama}</div>
+                        <ul class="deskripsi-produk">
+                            ${htmlDeskripsi}
+                        </ul>
+                        <div class="harga-produk">${hargaFormatRupiah}</div>
+                        <a href="${linkWa}" target="_blank" class="tombol-wa">💬 Pesan Lewat WhatsApp</a>
+                    </div>
+                `;
+
+                document.getElementById(kategori).innerHTML += produkBaru;
+                alert("Hore! Produk " + nama + " berhasil ditambahkan.");
+
+                document.getElementById("input-foto").value = "";
+                document.getElementById("input-nama").value = "";
+                document.getElementById("input-deskripsi").value = "";
+                document.getElementById("input-harga").value = "";
+            };
+
+            reader.readAsDataURL(fileFoto);
+        }
+    </script>
+
+</body>
+</html>
