@@ -90,7 +90,7 @@
         }
 
         /* KOTAK LOGIN & ADMIN */
-        .kotak-panel { background-color: rgba(255, 255, 255, 0.95); width: 90%; max-width: 400px; margin: 50px auto; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .kotak-panel { background-color: rgba(255, 255, 255, 0.95); width: 90%; max-width: 450px; margin: 50px auto; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
         .kotak-panel input[type="text"], .kotak-panel input[type="password"], .kotak-panel input[type="number"], .kotak-panel select, .kotak-panel textarea { 
             width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-family: Arial, sans-serif; font-size: 14px;
         }
@@ -98,7 +98,8 @@
             width: 90%; padding: 10px; margin: 10px 0; border: 2px dashed #00AEEF; border-radius: 5px; background-color: #f8f9fa; cursor: pointer;
         }
         .tombol-masuk { background-color: #00AEEF; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .tombol-tambah { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 95%;}
+        .tombol-tambah { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 90%;}
+        .tombol-batal-edit { background-color: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; width: 90%; display: none; }
 
         /* NAVIGASI & WADAH KATEGORI */
         .navigasi-kategori { background-color: white; padding: 15px 0; border-bottom: 2px solid #ccc; margin-top: 0; margin-bottom: 30px; }
@@ -109,12 +110,18 @@
         .daftar-produk { display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px; justify-content: center; }
 
         /* DESAIN KARTU PRODUK */
-        .kartu-produk { background-color: white; padding: 20px; width: 100%; max-width: 300px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .kartu-produk { background-color: white; padding: 20px; width: 100%; max-width: 300px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; position: relative; }
         .foto-produk { width: 100%; max-width: 250px; height: 250px; border-radius: 50%; object-fit: cover; margin: 0 auto 20px auto; }
         .nama-produk { background-color: #7E4F28; color: white; font-size: 20px; font-weight: bold; padding: 5px 15px; margin: 0 0 10px 0; text-align: left; }
         .deskripsi-produk { color: #7E4F28; font-size: 18px; font-weight: bold; text-align: left; margin: 0; padding-left: 25px; }
         .deskripsi-produk li { margin-bottom: 5px; }
         .harga-produk { color: #7E4F28; font-size: 28px; font-weight: bold; text-align: right; margin: 15px 0 15px 0; }
+
+        /* TOMBOL AKSI ADMIN DI KARTU PRODUK */
+        .panel-aksi-admin { display: none; margin-top: 10px; gap: 5px; justify-content: space-between; }
+        .tampil-aksi { display: flex; }
+        .tombol-edit-kartu { background-color: #ffc107; color: black; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; }
+        .tombol-hapus-kartu { background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; }
 
         /* TOMBOL WHATSAPP ESTETIK */
         .tombol-wa {
@@ -206,12 +213,13 @@
     <!-- HALAMAN ADMIN -->
     <div id="halaman-admin" class="halaman">
         <div class="kotak-panel" style="width: 100%; max-width: 500px;">
-            <h2>Panel Admin UMKM</h2>
+            <h2 id="judul-panel-admin">➕ Tambah Produk Baru</h2>
             <p id="teks-sapaan" style="color: #00AEEF; font-weight: bold;"></p>
             <hr>
             
-            <h3 style="text-align: left;">➕ Tambah Produk Baru</h3>
-            
+            <input type="hidden" id="edit-id-produk" value="">
+
+            <label style="display:block; text-align:left; font-weight:bold; margin-top:10px;">Pilih Kategori:</label>
             <select id="input-kategori">
                 <option value="wadah-catering">Kuliner: Catering</option>
                 <option value="wadah-snack">Kuliner: Snack</option>
@@ -221,16 +229,21 @@
                 <option value="wadah-mebel">Mebel & Kerajinan</option>
             </select>
 
+            <label style="display:block; text-align:left; font-weight:bold; margin-top:10px;">Foto Produk:</label>
             <input type="file" id="input-foto" class="input-file-desain" accept="image/*">
-            <small style="display: block; text-align: left; margin-bottom: 10px; color: gray;">*Pilih foto dari laptop/HP</small>
+            <small style="display: block; text-align: left; margin-bottom: 10px; color: gray;">*Pilih foto baru (kosongkan jika tidak ingin mengubah foto saat edit)</small>
             
+            <label style="display:block; text-align:left; font-weight:bold;">Nama Produk:</label>
             <input type="text" id="input-nama" placeholder="Nama Produk">
             
-            <textarea id="input-deskripsi" rows="3" placeholder="Deskripsi (Pisahkan dengan koma)"></textarea>
+            <label style="display:block; text-align:left; font-weight:bold;">Deskripsi (Pisahkan dengan koma):</label>
+            <textarea id="input-deskripsi" rows="3" placeholder="Contoh: Rasa Manis, Halal, Fresh"></textarea>
             
-            <input type="number" id="input-harga" placeholder="Harga (Cukup angka saja, misal: 20000)">
+            <label style="display:block; text-align:left; font-weight:bold;">Harga (Angka saja):</label>
+            <input type="number" id="input-harga" placeholder="Contoh: 20000">
             
-            <button class="tombol-tambah" onclick="tambahProduk()">Simpan Produk ke Website</button>
+            <button id="tombol-aksi-form" class="tombol-tambah" onclick="simpanProduk()">Simpan Produk ke Website</button>
+            <button id="tombol-batal" class="tombol-batal-edit" onclick="batalEdit()">Batal Edit</button>
             <br><br><hr><br>
             <button class="tombol-masuk" style="background-color: red;" onclick="bukaHalamanSaja('home')">Logout (Keluar)</button>
         </div>
@@ -238,6 +251,9 @@
 
     <!-- JAVASCRIPT -->
     <script>
+        let idCounter = 0;
+        let sedangDiEdit = null; // Menyimpan elemen kartu yang sedang diedit
+
         function pindahHalaman(namaHalaman, tombolYangDiklik) {
             let semuaHalaman = document.getElementsByClassName("halaman");
             for (let i = 0; i < semuaHalaman.length; i++) { semuaHalaman[i].style.display = "none"; }
@@ -262,6 +278,13 @@
             let pass = document.getElementById("password").value;
             if ((user === "mukhlas" || user === "zulfa" || user === "giffari") && pass === "kkn120") {
                 document.getElementById("teks-sapaan").innerText = "Selamat datang, Kak " + user.toUpperCase() + "!";
+                
+                // Tampilkan tombol aksi edit/hapus di semua kartu produk yang ada
+                let panelAksi = document.getElementsByClassName("panel-aksi-admin");
+                for(let i=0; i<panelAksi.length; i++) {
+                    panelAksi[i].classList.add("tampil-aksi");
+                }
+
                 bukaHalamanSaja('halaman-admin');
                 document.getElementById("username").value = ""; 
                 document.getElementById("password").value = ""; 
@@ -270,17 +293,12 @@
             }
         }
 
-        function tambahProduk() {
+        function simpanProduk() {
             let kategori = document.getElementById("input-kategori").value;
             let fileInput = document.getElementById("input-foto");
             let nama = document.getElementById("input-nama").value;
             let deskripsi = document.getElementById("input-deskripsi").value;
             let hargaInput = document.getElementById("input-harga").value;
-
-            if (fileInput.files.length === 0) {
-                alert("Gagal! Pilih foto produknya dulu ya.");
-                return;
-            }
 
             if (nama === "" || deskripsi === "" || hargaInput === "") {
                 alert("Gagal! Nama, deskripsi, dan harga harus diisi.");
@@ -294,40 +312,141 @@
             let pesanWa = encodeURIComponent("Halo, saya ingin memesan " + nama + " (" + hargaFormatRupiah + "). Apakah produk ini masih tersedia?");
             let linkWa = "https://wa.me/" + nomorWa + "?text=" + pesanWa;
 
-            let fileFoto = fileInput.files[0];
-            let reader = new FileReader();
+            let potonganDeskripsi = deskripsi.split(',');
+            let htmlDeskripsi = "";
+            for (let i = 0; i < potonganDeskripsi.length; i++) {
+                htmlDeskripsi += "<li>" + potonganDeskripsi[i].trim() + "</li>";
+            }
 
-            reader.onload = function(event) {
-                let fotoHasilUpload = event.target.result;
-
-                let potonganDeskripsi = deskripsi.split(',');
-                let htmlDeskripsi = "";
-                for (let i = 0; i < potonganDeskripsi.length; i++) {
-                    htmlDeskripsi += "<li>" + potonganDeskripsi[i].trim() + "</li>";
+            if (sedangDiEdit === null) {
+                // --- MODE TAMBAH PRODUK BARU ---
+                if (fileInput.files.length === 0) {
+                    alert("Gagal! Pilih foto produknya dulu ya.");
+                    return;
                 }
 
-                let produkBaru = `
-                    <div class="kartu-produk">
-                        <img src="${fotoHasilUpload}" alt="${nama}" class="foto-produk">
-                        <div class="nama-produk">${nama}</div>
-                        <ul class="deskripsi-produk">
-                            ${htmlDeskripsi}
-                        </ul>
-                        <div class="harga-produk">${hargaFormatRupiah}</div>
-                        <a href="${linkWa}" target="_blank" class="tombol-wa">💬 Pesan Lewat WhatsApp</a>
-                    </div>
-                `;
+                let fileFoto = fileInput.files[0];
+                let reader = new FileReader();
 
-                document.getElementById(kategori).innerHTML += produkBaru;
-                alert("Hore! Produk " + nama + " berhasil ditambahkan.");
+                reader.onload = function(event) {
+                    let fotoHasilUpload = event.target.result;
+                    buatKartuProduk(kategori, fotoHasilUpload, nama, htmlDeskripsi, hargaFormatRupiah, linkWa);
+                    resetFormAdmin();
+                    alert("Hore! Produk " + nama + " berhasil ditambahkan.");
+                };
+                reader.readAsDataURL(fileFoto);
 
-                document.getElementById("input-foto").value = "";
-                document.getElementById("input-nama").value = "";
-                document.getElementById("input-deskripsi").value = "";
-                document.getElementById("input-harga").value = "";
-            };
+            } else {
+                // --- MODE EDIT PRODUK YANG SUDAH ADA ---
+                let imgElement = sedangDiEdit.querySelector(".foto-produk");
+                let namaElement = sedangDiEdit.querySelector(".nama-produk");
+                let descElement = sedangDiEdit.querySelector(".deskripsi-produk");
+                let hargaElement = sedangDiEdit.querySelector(".harga-produk");
+                let waElement = sedangDiEdit.querySelector(".tombol-wa");
 
-            reader.readAsDataURL(fileFoto);
+                namaElement.innerText = nama;
+                descElement.innerHTML = htmlDeskripsi;
+                hargaElement.innerText = hargaFormatRupiah;
+                waElement.href = linkWa;
+
+                // Jika admin memilih foto baru saat mengedit
+                if (fileInput.files.length > 0) {
+                    let reader = new FileReader();
+                    reader.onload = function(event) {
+                        imgElement.src = event.target.result;
+                    };
+                    reader.readAsDataURL(fileInput.files[0]);
+                }
+
+                // Pindahkan ke wadah kategori jika kategorinya diubah
+                let wadahBaru = document.getElementById(kategori);
+                wadahBaru.appendChild(sedangDiEdit);
+
+                alert("Perubahan produk " + nama + " berhasil disimpan!");
+                resetFormAdmin();
+                bukaHalamanSaja('home');
+            }
+        }
+
+        function buatKartuProduk(kategori, foto, nama, htmlDeskripsi, hargaFormatRupiah, linkWa) {
+            idCounter++;
+            let kartuBaru = document.createElement("div");
+            kartuBaru.className = "kartu-produk";
+            kartuBaru.id = "produk-" + idCounter;
+
+            kartuBaru.innerHTML = `
+                <img src="${foto}" alt="${nama}" class="foto-produk">
+                <div class="nama-produk">${nama}</div>
+                <ul class="deskripsi-produk">
+                    ${htmlDeskripsi}
+                </ul>
+                <div class="harga-produk">${hargaFormatRupiah}</div>
+                <a href="${linkWa}" target="_blank" class="tombol-wa">💬 Pesan Lewat WhatsApp</a>
+                <div class="panel-aksi-admin tampil-aksi">
+                    <button class="tombol-edit-kartu" onclick="mulaiEdit('${kartuBaru.id}')">✏️ Edit</button>
+                    <button class="tombol-hapus-kartu" onclick="hapusProduk('${kartuBaru.id}')">🗑️ Hapus</button>
+                </div>
+            `;
+
+            document.getElementById(kategori).appendChild(kartuBaru);
+        }
+
+        function hapusProduk(idKartu) {
+            let konfirmasi = confirm("Yakin ingin menghapus produk ini?");
+            if (konfirmasi) {
+                let kartu = document.getElementById(idKartu);
+                kartu.remove();
+                alert("Produk berhasil dihapus.");
+            }
+        }
+
+        function mulaiEdit(idKartu) {
+            sedangDiEdit = document.getElementById(idKartu);
+            
+            let nama = sedangDiEdit.querySelector(".nama-produk").innerText;
+            let hargaTeks = sedangDiEdit.querySelector(".harga-produk").innerText;
+            let hargaAngka = hargaTeks.replace(/[^0-9]/g, ''); // Ambil angkanya saja
+
+            // Ambil teks deskripsi dari list li
+            let listLi = sedangDiEdit.querySelectorAll(".deskripsi-produk li");
+            let arrDeskripsi = [];
+            for(let i=0; i<listLi.length; i++) {
+                arrDeskripsi.push(listLi[i].innerText);
+            }
+            let gabunganDeskripsi = arrDeskripsi.join(", ");
+
+            // Cari kategori asal kartu ini berdasarkan id parent-nya
+            let idWadah = sedangDiEdit.parentElement.id;
+
+            // Masukkan data lama ke dalam form admin
+            document.getElementById("input-kategori").value = idWadah;
+            document.getElementById("input-nama").value = nama;
+            document.getElementById("input-deskripsi").value = gabunganDeskripsi;
+            document.getElementById("input-harga").value = hargaAngka;
+
+            // Ubah tampilan teks tombol di form admin
+            document.getElementById("judul-panel-admin").innerText = "✏️ Edit Produk";
+            document.getElementById("tombol-aksi-form").innerText = "Simpan Perubahan";
+            document.getElementById("tombol-batal").style.display = "block";
+
+            // Buka halaman admin
+            bukaHalamanSaja('halaman-admin');
+        }
+
+        function batalEdit() {
+            resetFormAdmin();
+            bukaHalamanSaja('home');
+        }
+
+        function resetFormAdmin() {
+            sedangDiEdit = null;
+            document.getElementById("input-foto").value = "";
+            document.getElementById("input-nama").value = "";
+            document.getElementById("input-deskripsi").value = "";
+            document.getElementById("input-harga").value = "";
+            document.getElementById("judul-panel-admin").innerText = "➕ Tambah Produk Baru";
+            document.getElementById("tombol-aksi-form").innerText = "Simpan Produk ke Website";
+            document.getElementById("tombol-batal").style.display = "none";
         }
     </script>
 
