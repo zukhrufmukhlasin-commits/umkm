@@ -24,6 +24,41 @@
             font-family: Arial, sans-serif;
         }
 
+        /* --- LAYAR LOADING (BARU) --- */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #EFEAE2; /* Sesuai warna tema website */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999999; /* Selalu berada paling atas menutupi segalanya */
+            transition: opacity 0.6s ease;
+        }
+        .lingkaran-loading {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #ccc;
+            border-top: 6px solid #7E4F28; /* Warna cokelat khas UMKM */
+            border-radius: 50%;
+            animation: putar 1s linear infinite;
+        }
+        @keyframes putar {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .teks-loading {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #7E4F28;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+
         /* WADAH KONTROL ATAS */
         .header-container {
             display: flex;
@@ -122,14 +157,14 @@
         .tombol-tambah { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 90%;}
         .tombol-batal-edit { background-color: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; width: 90%; display: none; }
 
-        /* NAVIGASI & WADAH KATEGORI (DIPPERLEBAR AGAR MUAT 3 SEBARIS) */
+        /* NAVIGASI & WADAH KATEGORI (PAS 3 SEBARIS) */
         .navigasi-kategori { background-color: white; padding: 15px 0; border-bottom: 2px solid #ccc; margin-top: 0; margin-bottom: 30px; }
         .kategori-link { text-decoration: none; color: #333; font-weight: bold; margin: 0 10px; font-size: 16px; }
         .kategori-link:hover { color: #00AEEF; }
         .bagian-katalog { background-color: rgba(255, 255, 255, 0.92); width: 95%; max-width: 1200px; margin: 30px auto; padding: 25px; border-radius: 10px; text-align: left; }
         .bagian-katalog h2 { border-bottom: 2px solid #7E4F28; padding-bottom: 10px; color: #7E4F28; }
         
-        /* DAFTAR PRODUK (GRID FLEXBOOK PAS 3 SEBARIS) */
+        /* DAFTAR PRODUK (GRID FLEX PAS 3 SEBARIS) */
         .daftar-produk { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; justify-content: center; }
 
         /* DESAIN KARTU PRODUK (RUMUS 33.33% AGAR PAS 3 PRODUK SEBARIS DI PC) */
@@ -193,6 +228,12 @@
 </head>
 <body>
 
+    <!-- LAYAR LOADING PENUTUP (BARU) -->
+    <div id="loading-screen">
+        <div class="lingkaran-loading"></div>
+        <div class="teks-loading">Memuat Katalog UMKM...</div>
+    </div>
+
     <!-- BARIS KONTROL ATAS -->
     <div class="header-container">
         <div>
@@ -203,7 +244,6 @@
             <a class="tombol-menu" onclick="pindahHalaman('kuliner', this)">KULINER</a>
             <a class="tombol-menu" onclick="pindahHalaman('tekstil', this)">TEKSTIL</a>
             <a class="tombol-menu" onclick="pindahHalaman('mebel', this)">MEBEL</a>
-            <!-- Tombol Tambah Produk Baru Muncul Disini Saat Admin Login -->
             <a id="tombol-menu-tambah" class="tombol-menu" onclick="bukaFormTambahProduk()">➕ TAMBAH PRODUK</a>
         </div>
     </div>
@@ -342,19 +382,14 @@
             if ((user === "mukhlas" || user === "zulfa" || user === "giffari") && pass === "kkn120") {
                 isAdminLoggedIn = true;
                 
-                // Ubah tampilan tombol gembok di kiri atas
                 let btnAdmin = document.getElementById("btn-login-admin");
                 btnAdmin.innerText = "🔓 Tampilan Admin (Aktif)";
                 btnAdmin.classList.add("admin-aktif");
 
-                // Munculkan tombol "➕ TAMBAH PRODUK" di menu atas
                 document.getElementById("tombol-menu-tambah").style.display = "inline-block";
-                
                 document.getElementById("teks-sapaan").innerText = "Selamat datang di Tampilan Admin, Kak " + user.toUpperCase() + "!";
                 
-                // Tampilkan tombol aksi edit/hapus dan aktifkan fitur drag & drop di semua kartu
                 perbaruiStatusAksiKartu();
-
                 bukaFormTambahProduk();
                 document.getElementById("username").value = ""; 
                 document.getElementById("password").value = ""; 
@@ -426,7 +461,6 @@
             }
 
             if (sedangDiEdit === null) {
-                // --- MODE TAMBAH PRODUK BARU ---
                 if (fileInput.files.length === 0) {
                     alert("Gagal! Pilih foto produknya dulu ya.");
                     return;
@@ -441,7 +475,6 @@
                     resetFormAdmin();
                     alert("Hore! Produk " + nama + " berhasil ditambahkan.");
                     
-                    // Langsung buka halaman katalog tempat produk itu ditambahkan
                     let namaHalamanTujuan = "home";
                     if(kategori.includes("catering") || kategori.includes("snack") || kategori.includes("jamu") || kategori.includes("kue")) namaHalamanTujuan = "kuliner";
                     else if(kategori.includes("tekstil")) namaHalamanTujuan = "tekstil";
@@ -452,7 +485,6 @@
                 reader.readAsDataURL(fileFoto);
 
             } else {
-                // --- MODE EDIT PRODUK YANG SUDAH ADA ---
                 let imgElement = sedangDiEdit.querySelector(".foto-produk");
                 let namaElement = sedangDiEdit.querySelector(".nama-produk");
                 let descElement = sedangDiEdit.querySelector(".deskripsi-produk");
@@ -489,7 +521,6 @@
             kartuBaru.setAttribute("draggable", isAdminLoggedIn ? "true" : "false");
             if(isAdminLoggedIn) kartuBaru.style.cursor = "move";
 
-            // Pasang Event Listener untuk fitur Seret & Lepas (Drag & Drop)
             kartuBaru.addEventListener('dragstart', function() {
                 if(!isAdminLoggedIn) return;
                 setTimeout(() => kartuBaru.classList.add('sedang-diseret'), 0);
@@ -522,7 +553,6 @@
             document.getElementById(kategori).appendChild(kartuBaru);
         }
 
-        // FITUR PINDAH POSISI DENGAN TOMBOL (SUPER PRAKTIS DI HP)
         function geserProduk(idKartu, arah) {
             let kartu = document.getElementById(idKartu);
             let wadah = kartu.parentElement;
@@ -533,7 +563,6 @@
             }
         }
 
-        // FITUR SERET DAN LEPAS (DRAG & DROP) DI LAPTOP/PC
         function aktifkanSeretDanLepas() {
             let semuaWadah = document.querySelectorAll('.daftar-produk');
             semuaWadah.forEach(wadah => {
@@ -620,10 +649,17 @@
             document.getElementById("tombol-batal").style.display = "none";
         }
 
-        // Jalankan pemantau seret & lepas saat website pertama kali dibuka
-        window.onload = function() {
+        // PERINTAH SAAT WEBSITE SELESAI DIMUAT
+        window.addEventListener('load', function() {
             aktifkanSeretDanLepas();
-        };
+            
+            // Sembunyikan layar loading dengan efek fade-out yang halus
+            let loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.style.opacity = '0';
+            setTimeout(function() {
+                loadingScreen.style.display = 'none';
+            }, 600); // Waktu yang pas agar transisinya terasa mulus
+        });
     </script>
 
 </body>
