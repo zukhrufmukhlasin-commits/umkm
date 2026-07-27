@@ -318,9 +318,10 @@
                 <option value="wadah-mebel">Mebel & Kerajinan</option>
             </select>
 
-            <label style="display:block; text-align:left; font-weight:bold; margin-top:10px;">Foto Produk (PNG, JPG, HEIC):</label>
-            <input type="file" id="input-foto" class="input-file-desain" accept="image/*, .png, .jpg, .jpeg, .heic, .heif" onchange="penandaProsesFoto(this)">
-            <small id="status-foto" style="display: block; text-align: left; margin-bottom: 10px; color: gray;">*Mendukung PNG, JPG, & foto iPhone (HEIC otomatis dikonversi & dikompres)</small>
+            <!-- TULISAN DAN FORMAT SUDAH DIKHUSUSKAN UNTUK JPG & PNG -->
+            <label style="display:block; text-align:left; font-weight:bold; margin-top:10px;">Foto Produk (Format JPG & PNG):</label>
+            <input type="file" id="input-foto" class="input-file-desain" accept=".png, .jpg, .jpeg" onchange="penandaProsesFoto(this)">
+            <small id="status-foto" style="display: block; text-align: left; margin-bottom: 10px; color: gray;">*Hanya mendukung format JPG dan PNG (Otomatis dikompres agar ringan)</small>
             
             <label style="display:block; text-align:left; font-weight:bold;">Nama Produk:</label>
             <input type="text" id="input-nama" placeholder="Nama Produk">
@@ -338,16 +339,13 @@
         </div>
     </div>
 
-    <!-- LIBRARY PENGUBAH HEIC KE JPG OTOMATIS -->
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.8.0/dist/heic2any.min.js"></script>
-
     <!-- JAVASCRIPT UTAMA -->
     <script>
         let idCounter = 0;
         let sedangDiEdit = null;
         let isAdminLoggedIn = false;
-        let fotoTersimpanSementara = null; // Menyimpan foto yang sudah dikompres
-        let dataProdukUMKM = []; // Array utama penyimpan produk
+        let fotoTersimpanSementara = null;
+        let dataProdukUMKM = []; 
 
         function pindahHalaman(namaHalaman, tombolYangDiklik) {
             let semuaHalaman = document.getElementsByClassName("halaman");
@@ -441,50 +439,41 @@
             }
         }
 
-        // --- SISTEM KOMPRESI & UPLOAD FOTO (ANTI ERROR / HEIC SUPPORT) ---
+        // --- SISTEM PEMROSESAN FOTO KHUSUS JPG & PNG ---
         function penandaProsesFoto(input) {
             let statusEl = document.getElementById("status-foto");
             if (input.files.length === 0) {
                 statusEl.style.color = "gray";
-                statusEl.innerText = "*Mendukung PNG, JPG, & foto iPhone (HEIC otomatis dikonversi & dikompres)";
+                statusEl.innerText = "*Hanya mendukung format JPG dan PNG (Otomatis dikompres agar ringan)";
                 fotoTersimpanSementara = null;
                 return;
             }
             
-            statusEl.style.color = "#00AEEF";
-            statusEl.innerText = "⏳ Sedang memproses dan mengompres foto... Mohon tunggu...";
-            
             let fileFoto = input.files[0];
             let namaFile = fileFoto.name.toLowerCase();
 
-            let jalankanKompresor = function(blob) {
-                let reader = new FileReader();
-                reader.onload = function(event) {
-                    kompresFoto(event.target.result, function(fotoRingan) {
-                        fotoTersimpanSementara = fotoRingan;
-                        statusEl.style.color = "#28a745";
-                        statusEl.innerText = "✅ Foto siap digunakan!";
-                    });
-                };
-                reader.readAsDataURL(blob);
-            };
-
-            if (namaFile.endsWith('.heic') || namaFile.endsWith('.heif')) {
-                if (typeof heic2any !== 'undefined') {
-                    heic2any({ blob: fileFoto, toType: "image/jpeg", quality: 0.7 })
-                    .then(function(resultBlob) {
-                        let blob = Array.isArray(resultBlob) ? resultBlob[0] : resultBlob;
-                        jalankanKompresor(blob);
-                    }).catch(function() {
-                        alert("Gagal memproses foto HEIC. Coba gunakan foto JPG/PNG biasa ya!");
-                        statusEl.innerText = "❌ Gagal memproses foto.";
-                    });
-                } else {
-                    jalankanKompresor(fileFoto);
-                }
-            } else {
-                jalankanKompresor(fileFoto);
+            // Pengecekan Ekstensi File
+            if (!namaFile.endsWith('.jpg') && !namaFile.endsWith('.jpeg') && !namaFile.endsWith('.png')) {
+                alert("Maaf, format foto harus berformat JPG atau PNG!\n\n(Jika ini foto HEIC/iPhone, silakan kirim ke WhatsApp dulu lalu download hasilnya agar otomatis jadi JPG).");
+                input.value = ""; // Kosongkan pilihan yang salah
+                statusEl.style.color = "red";
+                statusEl.innerText = "❌ Format tidak didukung! Silakan pilih foto JPG atau PNG.";
+                fotoTersimpanSementara = null;
+                return;
             }
+
+            statusEl.style.color = "#00AEEF";
+            statusEl.innerText = "⏳ Sedang memproses dan mengompres foto... Mohon tunggu...";
+            
+            let reader = new FileReader();
+            reader.onload = function(event) {
+                kompresFoto(event.target.result, function(fotoRingan) {
+                    fotoTersimpanSementara = fotoRingan;
+                    statusEl.style.color = "#28a745";
+                    statusEl.innerText = "✅ Foto siap digunakan!";
+                });
+            };
+            reader.readAsDataURL(fileFoto);
         }
 
         function kompresFoto(dataUrl, callback) {
@@ -492,18 +481,18 @@
             img.onload = function() {
                 let canvas = document.createElement('canvas');
                 let ctx = canvas.getContext('2d');
-                let maxW = 600; // Ukuran optimal yang sangat ringan tapi tetap tajam
+                let maxW = 600; 
                 let scale = 1;
                 if (img.width > maxW) scale = maxW / img.width;
                 canvas.width = img.width * scale;
                 canvas.height = img.height * scale;
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                callback(canvas.toDataURL('image/jpeg', 0.7)); // Kompres jadi JPG 70%
+                callback(canvas.toDataURL('image/jpeg', 0.7)); 
             };
             img.src = dataUrl;
         }
 
-        // --- SISTEM LOCALSTORAGE (AGAR PRODUK TIDAK HILANG SAAT REFRESH) ---
+        // --- SISTEM LOCALSTORAGE ---
         function muatProdukDariStorage() {
             let simpanan = localStorage.getItem('umkm_kemudo_data');
             if (simpanan) {
@@ -550,7 +539,6 @@
             }
 
             if (sedangDiEdit === null) {
-                // --- MODE TAMBAH BARU ---
                 if (!fotoTersimpanSementara) {
                     alert("Gagal! Pilih foto produknya dulu dan tunggu sampai statusnya berwarna hijau siap ya.");
                     return;
@@ -582,7 +570,6 @@
                 bukaHalamanSaja(namaHalamanTujuan);
 
             } else {
-                // --- MODE EDIT PRODUK ---
                 let produkData = dataProdukUMKM.find(p => p.id === sedangDiEdit.id);
                 if (produkData) {
                     produkData.nama = nama;
@@ -594,7 +581,6 @@
                     
                     simpanKeStorage();
                     
-                    // Update tampilan di layar
                     sedangDiEdit.querySelector(".nama-produk").innerText = nama;
                     sedangDiEdit.querySelector(".deskripsi-produk").innerHTML = htmlDeskripsi;
                     sedangDiEdit.querySelector(".harga-produk").innerText = hargaFormatRupiah;
@@ -624,7 +610,7 @@
 
             kartuBaru.addEventListener('dragend', function() {
                 kartuBaru.classList.remove('sedang-diseret');
-                updateUrutanStorage(); // Simpan urutan baru setelah diseret
+                updateUrutanStorage(); 
             });
 
             kartuBaru.innerHTML = `
@@ -659,7 +645,7 @@
             } else if (arah === 1 && kartu.nextElementSibling) {
                 wadah.insertBefore(kartu.nextElementSibling, kartu);
             }
-            updateUrutanStorage(); // Simpan urutan baru setelah digeser tombol
+            updateUrutanStorage(); 
         }
 
         function updateUrutanStorage() {
@@ -739,7 +725,7 @@
             fotoTersimpanSementara = null; 
             let statusEl = document.getElementById("status-foto");
             statusEl.style.color = "gray";
-            statusEl.innerText = "*Mendukung PNG, JPG, & HEIC (Kosongkan jika tidak ingin ganti foto)";
+            statusEl.innerText = "*Hanya mendukung format JPG dan PNG (Kosongkan jika tidak ingin ganti foto)";
 
             bukaHalamanSaja('halaman-admin');
         }
@@ -762,12 +748,12 @@
             
             let statusEl = document.getElementById("status-foto");
             statusEl.style.color = "gray";
-            statusEl.innerText = "*Mendukung PNG, JPG, & foto iPhone (HEIC otomatis dikonversi & dikompres)";
+            statusEl.innerText = "*Hanya mendukung format JPG dan PNG (Otomatis dikompres agar ringan)";
         }
 
         // PERINTAH SAAT WEBSITE SELESAI DIMUAT
         window.addEventListener('load', function() {
-            muatProdukDariStorage(); // Mengembalikan produk yang sudah disimpan sebelumnya!
+            muatProdukDariStorage(); 
             aktifkanSeretDanLepas();
             
             let loadingScreen = document.getElementById('loading-screen');
