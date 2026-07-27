@@ -319,9 +319,8 @@
             </select>
 
             <label style="display:block; text-align:left; font-weight:bold; margin-top:10px;">Foto Produk (PNG, JPG, HEIC):</label>
-            <!-- DITAMBAHKAN DUKUNGAN EKSPRESIF UNTUK .HEIC & .HEIF -->
-            <input type="file" id="input-foto" class="input-file-desain" accept="image/*, .png, .jpg, .jpeg, .heic, .heif">
-            <small style="display: block; text-align: left; margin-bottom: 10px; color: gray;">*Mendukung foto PNG, JPG, dan foto iPhone (HEIC otomatis dikonversi)</small>
+            <input type="file" id="input-foto" class="input-file-desain" accept="image/*, .png, .jpg, .jpeg, .heic, .heif" onchange="penandaProsesFoto(this)">
+            <small id="status-foto" style="display: block; text-align: left; margin-bottom: 10px; color: gray;">*Mendukung PNG, JPG, & foto iPhone (HEIC otomatis dikonversi & dikompres)</small>
             
             <label style="display:block; text-align:left; font-weight:bold;">Nama Produk:</label>
             <input type="text" id="input-nama" placeholder="Nama Produk">
@@ -347,6 +346,8 @@
         let idCounter = 0;
         let sedangDiEdit = null;
         let isAdminLoggedIn = false;
+        let fotoTersimpanSementara = null; // Menyimpan foto yang sudah dikompres
+        let dataProdukUMKM = []; // Array utama penyimpan produk
 
         function pindahHalaman(namaHalaman, tombolYangDiklik) {
             let semuaHalaman = document.getElementsByClassName("halaman");
@@ -440,45 +441,92 @@
             }
         }
 
-        // FUNGSI PINTAR UNTUK MEMBACA FOTO & OTOMATIS UBAH HEIC KE JPG
-        function prosesFotoUpload(fileInput, callback) {
-            let fileFoto = fileInput.files[0];
+        // --- SISTEM KOMPRESI & UPLOAD FOTO (ANTI ERROR / HEIC SUPPORT) ---
+        function penandaProsesFoto(input) {
+            let statusEl = document.getElementById("status-foto");
+            if (input.files.length === 0) {
+                statusEl.style.color = "gray";
+                statusEl.innerText = "*Mendukung PNG, JPG, & foto iPhone (HEIC otomatis dikonversi & dikompres)";
+                fotoTersimpanSementara = null;
+                return;
+            }
+            
+            statusEl.style.color = "#00AEEF";
+            statusEl.innerText = "⏳ Sedang memproses dan mengompres foto... Mohon tunggu...";
+            
+            let fileFoto = input.files[0];
             let namaFile = fileFoto.name.toLowerCase();
 
-            let jalankanReader = function(blob) {
+            let jalankanKompresor = function(blob) {
                 let reader = new FileReader();
                 reader.onload = function(event) {
-                    callback(event.target.result);
+                    kompresFoto(event.target.result, function(fotoRingan) {
+                        fotoTersimpanSementara = fotoRingan;
+                        statusEl.style.color = "#28a745";
+                        statusEl.innerText = "✅ Foto siap digunakan!";
+                    });
                 };
                 reader.readAsDataURL(blob);
             };
 
-            // Jika mendeteksi format iPhone HEIC/HEIF
             if (namaFile.endsWith('.heic') || namaFile.endsWith('.heif')) {
                 if (typeof heic2any !== 'undefined') {
-                    // Konversi otomatis ke JPG agar aman dibuka di Android / Laptop
-                    heic2any({
-                        blob: fileFoto,
-                        toType: "image/jpeg",
-                        quality: 0.7
-                    }).then(function(resultBlob) {
+                    heic2any({ blob: fileFoto, toType: "image/jpeg", quality: 0.7 })
+                    .then(function(resultBlob) {
                         let blob = Array.isArray(resultBlob) ? resultBlob[0] : resultBlob;
-                        jalankanReader(blob);
-                    }).catch(function(err) {
-                        alert("Gagal memproses foto HEIC. Coba gunakan foto JPG/PNG ya!");
+                        jalankanKompresor(blob);
+                    }).catch(function() {
+                        alert("Gagal memproses foto HEIC. Coba gunakan foto JPG/PNG biasa ya!");
+                        statusEl.innerText = "❌ Gagal memproses foto.";
                     });
                 } else {
-                    jalankanReader(fileFoto);
+                    jalankanKompresor(fileFoto);
                 }
             } else {
-                // Jika sudah JPG/PNG biasa, langsung proses
-                jalankanReader(fileFoto);
+                jalankanKompresor(fileFoto);
+            }
+        }
+
+        function kompresFoto(dataUrl, callback) {
+            let img = new Image();
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                let maxW = 600; // Ukuran optimal yang sangat ringan tapi tetap tajam
+                let scale = 1;
+                if (img.width > maxW) scale = maxW / img.width;
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                callback(canvas.toDataURL('image/jpeg', 0.7)); // Kompres jadi JPG 70%
+            };
+            img.src = dataUrl;
+        }
+
+        // --- SISTEM LOCALSTORAGE (AGAR PRODUK TIDAK HILANG SAAT REFRESH) ---
+        function muatProdukDariStorage() {
+            let simpanan = localStorage.getItem('umkm_kemudo_data');
+            if (simpanan) {
+                try {
+                    dataProdukUMKM = JSON.parse(simpanan);
+                    dataProdukUMKM.forEach(p => {
+                        if (p.idNum > idCounter) idCounter = p.idNum;
+                        renderKartuKeDOM(p);
+                    });
+                } catch(e) { console.error("Gagal load storage", e); }
+            }
+        }
+
+        function simpanKeStorage() {
+            try {
+                localStorage.setItem('umkm_kemudo_data', JSON.stringify(dataProdukUMKM));
+            } catch(e) {
+                alert("Peringatan: Memori browser penuh! Coba hapus produk yang sudah tidak terpakai.");
             }
         }
 
         function simpanProduk() {
             let kategori = document.getElementById("input-kategori").value;
-            let fileInput = document.getElementById("input-foto");
             let nama = document.getElementById("input-nama").value;
             let deskripsi = document.getElementById("input-deskripsi").value;
             let hargaInput = document.getElementById("input-harga").value;
@@ -502,46 +550,59 @@
             }
 
             if (sedangDiEdit === null) {
-                if (fileInput.files.length === 0) {
-                    alert("Gagal! Pilih foto produknya dulu ya.");
+                // --- MODE TAMBAH BARU ---
+                if (!fotoTersimpanSementara) {
+                    alert("Gagal! Pilih foto produknya dulu dan tunggu sampai statusnya berwarna hijau siap ya.");
                     return;
                 }
 
-                // Gunakan fungsi proses foto yang mendukung HEIC
-                prosesFotoUpload(fileInput, function(fotoHasilUpload) {
-                    buatKartuProduk(kategori, fotoHasilUpload, nama, htmlDeskripsi, hargaFormatRupiah, linkWa);
-                    resetFormAdmin();
-                    alert("Hore! Produk " + nama + " berhasil ditambahkan.");
-                    
-                    let namaHalamanTujuan = "home";
-                    if(kategori.includes("catering") || kategori.includes("snack") || kategori.includes("jamu") || kategori.includes("kue")) namaHalamanTujuan = "kuliner";
-                    else if(kategori.includes("tekstil")) namaHalamanTujuan = "tekstil";
-                    else if(kategori.includes("mebel")) namaHalamanTujuan = "mebel";
-                    
-                    bukaHalamanSaja(namaHalamanTujuan);
-                });
+                idCounter++;
+                let produkBaru = {
+                    idNum: idCounter,
+                    id: "produk-" + idCounter,
+                    kategori: kategori,
+                    foto: fotoTersimpanSementara,
+                    nama: nama,
+                    htmlDeskripsi: htmlDeskripsi,
+                    hargaFormatRupiah: hargaFormatRupiah,
+                    linkWa: linkWa
+                };
+
+                dataProdukUMKM.push(produkBaru);
+                simpanKeStorage();
+                renderKartuKeDOM(produkBaru);
+
+                alert("Hore! Produk " + nama + " berhasil ditambahkan.");
+                resetFormAdmin();
+                
+                let namaHalamanTujuan = "home";
+                if(kategori.includes("catering") || kategori.includes("snack") || kategori.includes("jamu") || kategori.includes("kue")) namaHalamanTujuan = "kuliner";
+                else if(kategori.includes("tekstil")) namaHalamanTujuan = "tekstil";
+                else if(kategori.includes("mebel")) namaHalamanTujuan = "mebel";
+                bukaHalamanSaja(namaHalamanTujuan);
 
             } else {
-                let imgElement = sedangDiEdit.querySelector(".foto-produk");
-                let namaElement = sedangDiEdit.querySelector(".nama-produk");
-                let descElement = sedangDiEdit.querySelector(".deskripsi-produk");
-                let hargaElement = sedangDiEdit.querySelector(".harga-produk");
-                let waElement = sedangDiEdit.querySelector(".tombol-wa");
-
-                namaElement.innerText = nama;
-                descElement.innerHTML = htmlDeskripsi;
-                hargaElement.innerText = hargaFormatRupiah;
-                waElement.href = linkWa;
-
-                if (fileInput.files.length > 0) {
-                    // Gunakan fungsi proses foto yang mendukung HEIC saat edit produk
-                    prosesFotoUpload(fileInput, function(fotoHasilUpload) {
-                        imgElement.src = fotoHasilUpload;
-                    });
+                // --- MODE EDIT PRODUK ---
+                let produkData = dataProdukUMKM.find(p => p.id === sedangDiEdit.id);
+                if (produkData) {
+                    produkData.nama = nama;
+                    produkData.htmlDeskripsi = htmlDeskripsi;
+                    produkData.hargaFormatRupiah = hargaFormatRupiah;
+                    produkData.linkWa = linkWa;
+                    produkData.kategori = kategori;
+                    if (fotoTersimpanSementara) produkData.foto = fotoTersimpanSementara;
+                    
+                    simpanKeStorage();
+                    
+                    // Update tampilan di layar
+                    sedangDiEdit.querySelector(".nama-produk").innerText = nama;
+                    sedangDiEdit.querySelector(".deskripsi-produk").innerHTML = htmlDeskripsi;
+                    sedangDiEdit.querySelector(".harga-produk").innerText = hargaFormatRupiah;
+                    sedangDiEdit.querySelector(".tombol-wa").href = linkWa;
+                    if (fotoTersimpanSementara) sedangDiEdit.querySelector(".foto-produk").src = fotoTersimpanSementara;
+                    
+                    document.getElementById(kategori).appendChild(sedangDiEdit);
                 }
-
-                let wadahBaru = document.getElementById(kategori);
-                wadahBaru.appendChild(sedangDiEdit);
 
                 alert("Perubahan produk " + nama + " berhasil disimpan!");
                 resetFormAdmin();
@@ -549,11 +610,10 @@
             }
         }
 
-        function buatKartuProduk(kategori, foto, nama, htmlDeskripsi, hargaFormatRupiah, linkWa) {
-            idCounter++;
+        function renderKartuKeDOM(p) {
             let kartuBaru = document.createElement("div");
             kartuBaru.className = "kartu-produk";
-            kartuBaru.id = "produk-" + idCounter;
+            kartuBaru.id = p.id;
             kartuBaru.setAttribute("draggable", isAdminLoggedIn ? "true" : "false");
             if(isAdminLoggedIn) kartuBaru.style.cursor = "move";
 
@@ -564,29 +624,31 @@
 
             kartuBaru.addEventListener('dragend', function() {
                 kartuBaru.classList.remove('sedang-diseret');
+                updateUrutanStorage(); // Simpan urutan baru setelah diseret
             });
 
             kartuBaru.innerHTML = `
-                <img src="${foto}" alt="${nama}" class="foto-produk">
-                <div class="nama-produk">${nama}</div>
+                <img src="${p.foto}" alt="${p.nama}" class="foto-produk">
+                <div class="nama-produk">${p.nama}</div>
                 <ul class="deskripsi-produk">
-                    ${htmlDeskripsi}
+                    ${p.htmlDeskripsi}
                 </ul>
-                <div class="harga-produk">${hargaFormatRupiah}</div>
-                <a href="${linkWa}" target="_blank" class="tombol-wa">💬 Pesan Lewat WhatsApp</a>
+                <div class="harga-produk">${p.hargaFormatRupiah}</div>
+                <a href="${p.linkWa}" target="_blank" class="tombol-wa">💬 Pesan Lewat WhatsApp</a>
                 <div class="panel-aksi-admin ${isAdminLoggedIn ? 'tampil-aksi' : ''}">
                     <div class="baris-tombol-aksi">
-                        <button class="tombol-edit-kartu" onclick="mulaiEdit('${kartuBaru.id}')">✏️ Edit</button>
-                        <button class="tombol-hapus-kartu" onclick="hapusProduk('${kartuBaru.id}')">🗑️ Hapus</button>
+                        <button class="tombol-edit-kartu" onclick="mulaiEdit('${p.id}')">✏️ Edit</button>
+                        <button class="tombol-hapus-kartu" onclick="hapusProduk('${p.id}')">🗑️ Hapus</button>
                     </div>
                     <div class="baris-tombol-aksi">
-                        <button class="tombol-geser" onclick="geserProduk('${kartuBaru.id}', -1)" title="Geser ke Kiri/Sebelumnya">⬅️ Geser Kiri</button>
-                        <button class="tombol-geser" onclick="geserProduk('${kartuBaru.id}', 1)" title="Geser ke Kanan/Berikutnya">Geser Kanan ➡️</button>
+                        <button class="tombol-geser" onclick="geserProduk('${p.id}', -1)" title="Geser ke Kiri">⬅️ Geser Kiri</button>
+                        <button class="tombol-geser" onclick="geserProduk('${p.id}', 1)" title="Geser ke Kanan">Geser Kanan ➡️</button>
                     </div>
                 </div>
             `;
 
-            document.getElementById(kategori).appendChild(kartuBaru);
+            let wadah = document.getElementById(p.kategori);
+            if (wadah) wadah.appendChild(kartuBaru);
         }
 
         function geserProduk(idKartu, arah) {
@@ -597,6 +659,21 @@
             } else if (arah === 1 && kartu.nextElementSibling) {
                 wadah.insertBefore(kartu.nextElementSibling, kartu);
             }
+            updateUrutanStorage(); // Simpan urutan baru setelah digeser tombol
+        }
+
+        function updateUrutanStorage() {
+            let semuaKartu = document.querySelectorAll('.kartu-produk');
+            let urutanBaru = [];
+            semuaKartu.forEach(kartu => {
+                let item = dataProdukUMKM.find(p => p.id === kartu.id);
+                if (item) {
+                    item.kategori = kartu.parentElement.id;
+                    urutanBaru.push(item);
+                }
+            });
+            dataProdukUMKM = urutanBaru;
+            simpanKeStorage();
         }
 
         function aktifkanSeretDanLepas() {
@@ -636,35 +713,33 @@
             let konfirmasi = confirm("Yakin ingin menghapus produk ini?");
             if (konfirmasi) {
                 let kartu = document.getElementById(idKartu);
-                kartu.remove();
+                if (kartu) kartu.remove();
+                dataProdukUMKM = dataProdukUMKM.filter(p => p.id !== idKartu);
+                simpanKeStorage();
                 alert("Produk berhasil dihapus.");
             }
         }
 
         function mulaiEdit(idKartu) {
             sedangDiEdit = document.getElementById(idKartu);
+            let produkData = dataProdukUMKM.find(p => p.id === idKartu);
+            if (!produkData) return;
             
-            let nama = sedangDiEdit.querySelector(".nama-produk").innerText;
-            let hargaTeks = sedangDiEdit.querySelector(".harga-produk").innerText;
-            let hargaAngka = hargaTeks.replace(/[^0-9]/g, ''); 
+            let hargaAngka = produkData.hargaFormatRupiah.replace(/[^0-9]/g, ''); 
 
-            let listLi = sedangDiEdit.querySelectorAll(".deskripsi-produk li");
-            let arrDeskripsi = [];
-            for(let i=0; i<listLi.length; i++) {
-                arrDeskripsi.push(listLi[i].innerText);
-            }
-            let gabunganDeskripsi = arrDeskripsi.join(", ");
-
-            let idWadah = sedangDiEdit.parentElement.id;
-
-            document.getElementById("input-kategori").value = idWadah;
-            document.getElementById("input-nama").value = nama;
-            document.getElementById("input-deskripsi").value = gabunganDeskripsi;
+            document.getElementById("input-kategori").value = produkData.kategori;
+            document.getElementById("input-nama").value = produkData.nama;
+            document.getElementById("input-deskripsi").value = produkData.htmlDeskripsi.replace(/<li>/g, '').replace(/<\/li>/g, ', ').replace(/,\s*$/, '');
             document.getElementById("input-harga").value = hargaAngka;
 
             document.getElementById("judul-panel-admin").innerText = "✏️ Edit Produk";
             document.getElementById("tombol-aksi-form").innerText = "Simpan Perubahan";
             document.getElementById("tombol-batal").style.display = "block";
+
+            fotoTersimpanSementara = null; 
+            let statusEl = document.getElementById("status-foto");
+            statusEl.style.color = "gray";
+            statusEl.innerText = "*Mendukung PNG, JPG, & HEIC (Kosongkan jika tidak ingin ganti foto)";
 
             bukaHalamanSaja('halaman-admin');
         }
@@ -676,6 +751,7 @@
 
         function resetFormAdmin() {
             sedangDiEdit = null;
+            fotoTersimpanSementara = null;
             document.getElementById("input-foto").value = "";
             document.getElementById("input-nama").value = "";
             document.getElementById("input-deskripsi").value = "";
@@ -683,10 +759,15 @@
             document.getElementById("judul-panel-admin").innerText = "➕ Tambah Produk Baru";
             document.getElementById("tombol-aksi-form").innerText = "Simpan Produk ke Website";
             document.getElementById("tombol-batal").style.display = "none";
+            
+            let statusEl = document.getElementById("status-foto");
+            statusEl.style.color = "gray";
+            statusEl.innerText = "*Mendukung PNG, JPG, & foto iPhone (HEIC otomatis dikonversi & dikompres)";
         }
 
         // PERINTAH SAAT WEBSITE SELESAI DIMUAT
         window.addEventListener('load', function() {
+            muatProdukDariStorage(); // Mengembalikan produk yang sudah disimpan sebelumnya!
             aktifkanSeretDanLepas();
             
             let loadingScreen = document.getElementById('loading-screen');
