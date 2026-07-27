@@ -248,7 +248,7 @@
         </div>
     </div>
 
-    <!-- HALAMAN HOME (DITAMBAHKAN FOTO KEDUA) -->
+    <!-- HALAMAN HOME -->
     <div id="home" class="halaman halaman-tampil">
         <img src="Halaman Home.png" alt="Selamat Datang UMKM Kemudo" class="gambar-utama">
         <img src="Halaman Home(2).png" alt="Informasi Tambahan UMKM Kemudo" class="gambar-utama">
@@ -318,9 +318,10 @@
                 <option value="wadah-mebel">Mebel & Kerajinan</option>
             </select>
 
-            <label style="display:block; text-align:left; font-weight:bold; margin-top:10px;">Foto Produk:</label>
-            <input type="file" id="input-foto" class="input-file-desain" accept="image/*">
-            <small style="display: block; text-align: left; margin-bottom: 10px; color: gray;">*Pilih foto baru (kosongkan jika tidak ingin mengubah foto saat edit)</small>
+            <label style="display:block; text-align:left; font-weight:bold; margin-top:10px;">Foto Produk (PNG, JPG, HEIC):</label>
+            <!-- DITAMBAHKAN DUKUNGAN EKSPRESIF UNTUK .HEIC & .HEIF -->
+            <input type="file" id="input-foto" class="input-file-desain" accept="image/*, .png, .jpg, .jpeg, .heic, .heif">
+            <small style="display: block; text-align: left; margin-bottom: 10px; color: gray;">*Mendukung foto PNG, JPG, dan foto iPhone (HEIC otomatis dikonversi)</small>
             
             <label style="display:block; text-align:left; font-weight:bold;">Nama Produk:</label>
             <input type="text" id="input-nama" placeholder="Nama Produk">
@@ -338,7 +339,10 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT -->
+    <!-- LIBRARY PENGUBAH HEIC KE JPG OTOMATIS -->
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.8.0/dist/heic2any.min.js"></script>
+
+    <!-- JAVASCRIPT UTAMA -->
     <script>
         let idCounter = 0;
         let sedangDiEdit = null;
@@ -436,6 +440,42 @@
             }
         }
 
+        // FUNGSI PINTAR UNTUK MEMBACA FOTO & OTOMATIS UBAH HEIC KE JPG
+        function prosesFotoUpload(fileInput, callback) {
+            let fileFoto = fileInput.files[0];
+            let namaFile = fileFoto.name.toLowerCase();
+
+            let jalankanReader = function(blob) {
+                let reader = new FileReader();
+                reader.onload = function(event) {
+                    callback(event.target.result);
+                };
+                reader.readAsDataURL(blob);
+            };
+
+            // Jika mendeteksi format iPhone HEIC/HEIF
+            if (namaFile.endsWith('.heic') || namaFile.endsWith('.heif')) {
+                if (typeof heic2any !== 'undefined') {
+                    // Konversi otomatis ke JPG agar aman dibuka di Android / Laptop
+                    heic2any({
+                        blob: fileFoto,
+                        toType: "image/jpeg",
+                        quality: 0.7
+                    }).then(function(resultBlob) {
+                        let blob = Array.isArray(resultBlob) ? resultBlob[0] : resultBlob;
+                        jalankanReader(blob);
+                    }).catch(function(err) {
+                        alert("Gagal memproses foto HEIC. Coba gunakan foto JPG/PNG ya!");
+                    });
+                } else {
+                    jalankanReader(fileFoto);
+                }
+            } else {
+                // Jika sudah JPG/PNG biasa, langsung proses
+                jalankanReader(fileFoto);
+            }
+        }
+
         function simpanProduk() {
             let kategori = document.getElementById("input-kategori").value;
             let fileInput = document.getElementById("input-foto");
@@ -467,11 +507,8 @@
                     return;
                 }
 
-                let fileFoto = fileInput.files[0];
-                let reader = new FileReader();
-
-                reader.onload = function(event) {
-                    let fotoHasilUpload = event.target.result;
+                // Gunakan fungsi proses foto yang mendukung HEIC
+                prosesFotoUpload(fileInput, function(fotoHasilUpload) {
                     buatKartuProduk(kategori, fotoHasilUpload, nama, htmlDeskripsi, hargaFormatRupiah, linkWa);
                     resetFormAdmin();
                     alert("Hore! Produk " + nama + " berhasil ditambahkan.");
@@ -482,8 +519,7 @@
                     else if(kategori.includes("mebel")) namaHalamanTujuan = "mebel";
                     
                     bukaHalamanSaja(namaHalamanTujuan);
-                };
-                reader.readAsDataURL(fileFoto);
+                });
 
             } else {
                 let imgElement = sedangDiEdit.querySelector(".foto-produk");
@@ -498,11 +534,10 @@
                 waElement.href = linkWa;
 
                 if (fileInput.files.length > 0) {
-                    let reader = new FileReader();
-                    reader.onload = function(event) {
-                        imgElement.src = event.target.result;
-                    };
-                    reader.readAsDataURL(fileInput.files[0]);
+                    // Gunakan fungsi proses foto yang mendukung HEIC saat edit produk
+                    prosesFotoUpload(fileInput, function(fotoHasilUpload) {
+                        imgElement.src = fotoHasilUpload;
+                    });
                 }
 
                 let wadahBaru = document.getElementById(kategori);
